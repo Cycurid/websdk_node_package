@@ -47,7 +47,7 @@ export function initCycurid(
 
       const targetUrl = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&sessionId=${sessionId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}&sandboxMode=${sandboxMode}`;
 
-      if (isMobileDevice()) {
+      if (!isMobileDevice()) {
         const qrContainer = document.createElement('div');
         Object.assign(qrContainer.style, {
           position: 'fixed',
