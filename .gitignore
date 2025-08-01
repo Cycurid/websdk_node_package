@@ -1,4 +1,3 @@
-# Node.js
 node_modules/
 .env*
 npm-debug.log*
@@ -8,21 +7,17 @@ yarn-error.log*
 .eslintcache
 .node_repl_history
 
-# Logs
 logs/
 *.log
 
-# Dependency directories
 pids/
 *.pid
 *.seed
 *.pid.lock
 
-# Build artifacts
 dist/
 build/
 coverage/
 
-# Editor/OS specific files
 .DS_Store
 .vscode/

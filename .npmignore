@@ -1,0 +1,30 @@
+# Source files
+src/
+*.ts
+*.tsx
+
+# Development files
+.git/
+.gitignore
+.npmignore
+tsconfig.json
+node_modules/
+
+# Build artifacts (keep dist/ for npm)
+# dist/ is intentionally NOT here since we want to publish the built files
+
+# Development tools
+.vscode/
+.DS_Store
+*.log
+.env*
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.*
+*.spec.*
+
+# Documentation (if you have any)
+docs/ 

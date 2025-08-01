@@ -1,9 +1,8 @@
 import axios from 'axios';
 import WebSocket from 'ws';
 
-const API_BASE_URL = 'https://api2.cycurid.com/v2/sdk/session/web-new';
-const IFRAME_BASE_URL = "https://websdk.cycurid.com"//'https://1a42076f524d.ngrok.app'; "https://websdk.cycurid.com"
-
+const API_BASE_URL = "http://localhost:3000/v2/sdk/session/" //web-new";
+const IFRAME_BASE_URL = "http://localhost:5173";
 
 export interface CycuridInitParams {
   merchantKey: string;
@@ -17,13 +16,6 @@ export interface CycuridResult {
   error?: string;
 }
 
-/**
- * Initializes Cycurid session.
- * @param merchantKey Merchant key
- * @param secretKey Secret key
- * @param userId User ID
- * @returns Promise that resolves with the result from the WebSocket server
- */
 export function initCycurid(
   merchantKey: string,
   userId: string,
@@ -31,75 +23,82 @@ export function initCycurid(
 ): Promise<CycuridResult> {
   return new Promise(async (resolve, reject) => {
     try {
-        
-      const response = await axios.post(API_BASE_URL,{}, { //'https://api.cycurid.com/v2/sdk/session/web-new'
+      // 1. Create session
+      const response = await axios.post(`${API_BASE_URL}web-new`, { user_id: userId, type: "web" }, {
         headers: {
-            'x-api-key': merchantKey,
-            'Content-Type': 'application/json',
+          'x-api-key': merchantKey,
+          'Content-Type': 'application/json',
         },
       });
-    //   resolve({ status: 'success', data: response });
-    //   console.log("response from server sdk: ", response)
 
       const token = response.data?.token;
       const sdkId = response.data?.sdk_id;
-      if (!token) {
-        return reject({ status: 'error', error: 'Missing sessionId in response' });
+      const sessionId = response.data?.session_id;
+
+      if (!token || !sessionId) {
+        return reject({ status: 'error', error: 'Missing sessionId or token in response' });
       }
 
       const iframe = document.createElement('iframe');
-      iframe.src = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}`;
-
+      iframe.src = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&sessionId=${sessionId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}`;
       iframe.allow = 'camera';
-      iframe.style.position = 'fixed';
-      iframe.style.top = '50%';
-      iframe.style.left = '50%';
-      iframe.style.transform = 'translate(-50%, -50%)';
-      iframe.style.width = '90vw'; // or fixed width like '600px'
-      iframe.style.maxWidth = '600px';
-      iframe.style.height = '80vh';
-      iframe.style.border = '1px solid #ccc';
-      iframe.style.borderRadius = '12px';
-      iframe.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.2)';
-      iframe.style.zIndex = '10000';
+      Object.assign(iframe.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90vw',
+        maxWidth: '600px',
+        height: '80vh',
+        border: '1px solid #ccc',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        zIndex: '10000',
+      });
       iframe.id = 'cycurid-iframe';
       document.body.appendChild(iframe);
 
-      const messageHandler = (event: MessageEvent) => {
-        if (
-          event.origin !== IFRAME_BASE_URL ||
-          !event.data ||
-          typeof event.data !== 'object'
-        ) {
-          return;
-        }
+      const POLL_INTERVAL = 5000;
+      let pollingTimer: number;
 
-        const { status, data, error } = event.data;
-        console.log("Status and data: ", status, data)
-        if (status === 'success') {
+      const pollServer = async () => {
+        try {
+          const statusResp = await axios.get(`${API_BASE_URL}verification-result/${sessionId}`, {
+            headers: { 'x-api-key': merchantKey }
+          });
+          const { status, result, error } = statusResp.data;
+
+          console.log("Polling result:", status);
+
+          if (status === 'success') {
+            cleanup();
+            resolve(status);
+          } else if (status === 'failure') {
+            cleanup();
+            reject({ status, error: error || 'Verification failed.' });
+          } else if (status == "cancelled") {
+            console.log("Inside polling result cancelled. . .")
+            cleanup();
+            reject({ status, error: error || 'User Cancelled.' });
+          }
+        } catch (err: any) {
+          console.warn("Polling error:", err.message);
           cleanup();
-          resolve({ status, data });
-        } 
-        else if (status === 'exit') {
-          cleanup();
-          reject({ status, error: 'User exited the verification process.' });
-        } 
-        else if (status === 'error') {
-          cleanup();
-          reject({ status, error });
+          reject(`Error: ${err}`);
         }
       };
 
+      pollingTimer = window.setInterval(pollServer, POLL_INTERVAL);
+      pollServer();
+
       const cleanup = () => {
-        window.removeEventListener('message', messageHandler);
+        clearInterval(pollingTimer);
         const existing = document.getElementById('cycurid-iframe');
         if (existing) existing.remove();
       };
-
-      window.addEventListener('message', messageHandler);
 
     } catch (err: any) {
       reject({ status: 'error', error: err.message });
     }
   });
-} 
+}
