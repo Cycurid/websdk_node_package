@@ -2,8 +2,8 @@ import axios from 'axios';
 import WebSocket from 'ws';
 import QRCode from 'qrcode';
 
-const API_BASE_URL = "http://localhost:3000/v2/sdk/session/"
-const IFRAME_BASE_URL = "http://localhost:5173";
+const API_BASE_URL = 'https://api2.cycurid.com/v2/sdk/session/' //"http://localhost:3000/v2/sdk/session/"
+const IFRAME_BASE_URL = 'https://websdk.cycurid.com' //"http://localhost:5173";
 
 export interface CycuridInitParams {
   merchantKey: string;
@@ -39,14 +39,15 @@ export function initCycurid(
       const token = response.data?.token;
       const sdkId = response.data?.sdk_id;
       const sessionId = response.data?.session_id;
+      const sandboxMode = response.data?.sandbox_mode;
 
       if (!token || !sessionId) {
         return reject({ status: 'error', error: 'Missing sessionId or token in response' });
       }
 
-      const targetUrl = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&sessionId=${sessionId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}`;
+      const targetUrl = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&sessionId=${sessionId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}&sandboxMode=${sandboxMode}`;
 
-      if (isMobileDevice()) {
+      if (!isMobileDevice()) {
         console.log("IS MOBILE DEVICE....")
         const qrContainer = document.createElement('div');
         Object.assign(qrContainer.style, {
@@ -60,10 +61,32 @@ export function initCycurid(
           borderRadius: '12px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
           zIndex: '10000',
+          maxWidth: '300px',
+          textAlign: 'center',
+          fontFamily: 'Arial, sans-serif'
         });
         qrContainer.id = 'cycurid-qr-container';
         document.body.appendChild(qrContainer);
-
+      
+        const title = document.createElement('h2');
+        title.innerText = "Liveness Verification";
+        Object.assign(title.style, {
+          fontSize: '20px',
+          margin: '10px 0',
+          color: '#333'
+        });
+        qrContainer.appendChild(title);
+      
+        const subtitle = document.createElement('p');
+        subtitle.innerText = "Scan the QR code on your camera with your mobile device to begin the verification process.";
+        Object.assign(subtitle.style, {
+          fontSize: '14px',
+          margin: '0 0 15px 0',
+          color: '#555',
+          lineHeight: '1.4'
+        });
+        qrContainer.appendChild(subtitle);
+ 
         const qrCanvas = document.createElement('canvas');
         qrContainer.appendChild(qrCanvas);
         await QRCode.toCanvas(qrCanvas, targetUrl, { width: 250 });
