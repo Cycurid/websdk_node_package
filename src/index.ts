@@ -3,7 +3,7 @@ import WebSocket from 'ws';
 import QRCode from 'qrcode';
 
 const API_BASE_URL = 'https://api2.cycurid.com/v2/sdk/session/' //"http://localhost:3000/v2/sdk/session/"
-const IFRAME_BASE_URL = 'https://websdk.cycurid.com' //"http://localhost:5173";
+const IFRAME_BASE_URL = 'https://websdk.cycurid.com'//"http://localhost:5173";
 
 export interface CycuridInitParams {
   merchantKey: string;
@@ -47,8 +47,7 @@ export function initCycurid(
 
       const targetUrl = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&sessionId=${sessionId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}&sandboxMode=${sandboxMode}`;
 
-      if (!isMobileDevice()) {
-        console.log("IS MOBILE DEVICE....")
+      if (isMobileDevice()) {
         const qrContainer = document.createElement('div');
         Object.assign(qrContainer.style, {
           position: 'fixed',
@@ -91,7 +90,6 @@ export function initCycurid(
         qrContainer.appendChild(qrCanvas);
         await QRCode.toCanvas(qrCanvas, targetUrl, { width: 250 });
       } else {
-        console.log("DESKTOP BROWSER...")
         const iframe = document.createElement('iframe');
         iframe.src = targetUrl
         iframe.allow = 'camera';
@@ -122,7 +120,7 @@ export function initCycurid(
           });
           const { status, result, error } = statusResp.data;
 
-          console.log("Polling result:", status);
+        //   console.log("Polling result:", status);
 
           if (status === 'success') {
             cleanup();
@@ -131,12 +129,10 @@ export function initCycurid(
             cleanup();
             reject({ status, error: error || 'Verification failed.' });
           } else if (status == "cancelled") {
-            console.log("Inside polling result cancelled. . .")
             cleanup();
             reject({ status, error: error || 'User Cancelled.' });
           }
         } catch (err: any) {
-          console.warn("Polling error:", err.message);
           cleanup();
           reject(`Error: ${err}`);
         }
