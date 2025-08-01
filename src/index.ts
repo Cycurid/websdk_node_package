@@ -1,7 +1,8 @@
 import axios from 'axios';
 import WebSocket from 'ws';
+import QRCode from 'qrcode';
 
-const API_BASE_URL = "http://localhost:3000/v2/sdk/session/" //web-new";
+const API_BASE_URL = "http://localhost:3000/v2/sdk/session/"
 const IFRAME_BASE_URL = "http://localhost:5173";
 
 export interface CycuridInitParams {
@@ -15,6 +16,10 @@ export interface CycuridResult {
   data?: any;
   error?: string;
 }
+
+function isMobileDevice(): boolean {
+    return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
 
 export function initCycurid(
   merchantKey: string,
@@ -39,24 +44,50 @@ export function initCycurid(
         return reject({ status: 'error', error: 'Missing sessionId or token in response' });
       }
 
-      const iframe = document.createElement('iframe');
-      iframe.src = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&sessionId=${sessionId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}`;
-      iframe.allow = 'camera';
-      Object.assign(iframe.style, {
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '90vw',
-        maxWidth: '600px',
-        height: '80vh',
-        border: '1px solid #ccc',
-        borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-        zIndex: '10000',
-      });
-      iframe.id = 'cycurid-iframe';
-      document.body.appendChild(iframe);
+      const targetUrl = `${IFRAME_BASE_URL}/?token=${token}&sdkId=${sdkId}&sessionId=${sessionId}&type=${encodeURIComponent(type)}&userId=${encodeURIComponent(userId)}`;
+
+      if (isMobileDevice()) {
+        console.log("IS MOBILE DEVICE....")
+        const qrContainer = document.createElement('div');
+        Object.assign(qrContainer.style, {
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          padding: '20px',
+          background: '#fff',
+          border: '1px solid #ccc',
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+          zIndex: '10000',
+        });
+        qrContainer.id = 'cycurid-qr-container';
+        document.body.appendChild(qrContainer);
+
+        const qrCanvas = document.createElement('canvas');
+        qrContainer.appendChild(qrCanvas);
+        await QRCode.toCanvas(qrCanvas, targetUrl, { width: 250 });
+      } else {
+        console.log("DESKTOP BROWSER...")
+        const iframe = document.createElement('iframe');
+        iframe.src = targetUrl
+        iframe.allow = 'camera';
+        Object.assign(iframe.style, {
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '90vw',
+          maxWidth: '600px',
+          height: '80vh',
+          border: '1px solid #ccc',
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+          zIndex: '10000',
+        });
+        iframe.id = 'cycurid-iframe';
+        document.body.appendChild(iframe);
+      }
 
       const POLL_INTERVAL = 5000;
       let pollingTimer: number;
