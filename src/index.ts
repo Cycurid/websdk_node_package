@@ -31,8 +31,8 @@ export function initCycurid(
       // 1. Create session
       const response = await axios.post(`${API_BASE_URL}web-new`, { user_id: userId, type: "web" }, {
         headers: {
-          'x-api-key': merchantKey,
-          'Content-Type': 'application/json',
+          'x-api-key':merchantKey,
+          'Content-Type':'application/json',
         },
       });
 
@@ -110,7 +110,7 @@ export function initCycurid(
         document.body.appendChild(iframe);
       }
 
-      const POLL_INTERVAL = 5000;
+      const POLL_INTERVAL = 2500;
       let pollingTimer: number;
 
       const pollServer = async () => {
@@ -120,7 +120,7 @@ export function initCycurid(
           });
           const { status, result, error } = statusResp.data;
 
-        //   console.log("Polling result:", status);
+          console.log("Polling result:", status);
 
           if (status === 'success') {
             cleanup();
