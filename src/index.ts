@@ -2,8 +2,8 @@ import axios from 'axios';
 import WebSocket from 'ws';
 import QRCode from 'qrcode';
 
-const API_BASE_URL = 'https://api2.cycurid.com/v2/sdk/session/' //"http://localhost:3000/v2/sdk/session/"
-const IFRAME_BASE_URL = 'https://websdk.cycurid.com'//"http://localhost:5173";
+const API_BASE_URL = 'https://api2.cycurid.com/v2/sdk/session/'//'https://api2.cycurid.com/v2/sdk/session/' //"http://localhost:3000/v2/sdk/session/"
+const IFRAME_BASE_URL = 'https://websdk.cycurid.com'//'https://websdk.cycurid.com'//"http://localhost:5173";
 
 export interface CycuridInitParams {
   merchantKey: string;
@@ -66,6 +66,23 @@ export function initCycurid(
         });
         qrContainer.id = 'cycurid-qr-container';
         document.body.appendChild(qrContainer);
+
+        const closeButton = document.createElement('span');
+        closeButton.innerText = '×';
+        Object.assign(closeButton.style, {
+          position: 'absolute',
+          top: '8px',
+          left: '12px',
+          fontSize: '20px',
+          fontWeight: 'bold',
+          color: '#999',
+          cursor: 'pointer',
+          userSelect: 'none'
+        });
+        closeButton.onclick = () => {
+          qrContainer.remove();
+        };
+        qrContainer.appendChild(closeButton);
       
         const title = document.createElement('h2');
         title.innerText = "Liveness Verification";
@@ -119,8 +136,6 @@ export function initCycurid(
             headers: { 'x-api-key': merchantKey }
           });
           const { status, result, error } = statusResp.data;
-
-          console.log("Polling result:", status);
 
           if (status === 'success') {
             cleanup();
