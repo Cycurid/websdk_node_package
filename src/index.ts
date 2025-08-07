@@ -80,6 +80,8 @@ export function initCycurid(
         });
         closeButton.onclick = () => {
           qrContainer.remove();
+          cleanup();
+          reject({error: 'User Cancelled.'})
         };
         qrContainer.appendChild(closeButton);
       
