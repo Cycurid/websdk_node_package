@@ -50,6 +50,34 @@ try {
 - The SDK automatically detects the device type and shows the appropriate interface
 - Polls the server for verification status and returns results once complete
 
+## Checking Verification Results Directly
+
+You can also check the verification result directly using the API endpoint:
+
+### Endpoint
+```
+GET https://api2.cycurid.com/v2/sdk/session/verification-result/{sessionId}
+```
+
+### Headers
+```
+x-api-key: {merchantKey}
+Content-Type: application/json
+```
+
+### Response
+```json
+{
+  "status": "success" | "expired" | "cancelled" | "pending"
+}
+```
+
+**Status Values:**
+- `success`: Verification completed successfully
+- `expired`: Token has expired
+- `cancelled`: User cancelled the verification
+- `pending`: Verification still in progress
+
 ## API Reference
 
 ### `initCycurid(merchantKey: string, userId: string, type: string): Promise<void>`
