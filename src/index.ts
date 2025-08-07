@@ -12,6 +12,7 @@ export interface CycuridInitParams {
 
 export interface CycuridResult {
   status: string;
+  sessionId: string;
   data?: any;
   error?: string;
 }
@@ -144,7 +145,7 @@ export function initCycurid(
           if (status === 'success') {
             setTimeout(() => {
               cleanup();
-              resolve(status);
+              resolve({status, sessionId});
             }, 1000);
           } 
           // else if (status === 'failed') {
@@ -153,14 +154,14 @@ export function initCycurid(
           // } 
           else if (status === 'expired') {
             cleanup();
-            reject({ status, error: 'Token expired.' });
+            reject({ status, error: 'Token expired.', sessionId });
           } else if (status == "cancelled") {
             cleanup();
-            reject({ status, error: 'User Cancelled.' });
+            reject({ status, error: 'User Cancelled.', sessionId});
           }
         } catch (err: any) {
           cleanup();
-          reject(`Error: ${err}`);
+          reject({status: "failed", error: `${err}`, sessionId});
         }
       };
 
