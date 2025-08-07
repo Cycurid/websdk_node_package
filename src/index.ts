@@ -140,12 +140,16 @@ export function initCycurid(
           const { status } = statusResp.data;
 
           if (status === 'success') {
-            cleanup();
-            resolve(status);
-          } else if (status === 'failure') {
-            cleanup();
-            reject({ status, error: 'Verification failed.' });
-          } else if (status === 'expired') {
+            setTimeout(() => {
+              cleanup();
+              resolve(status);
+            }, 1000);
+          } 
+          // else if (status === 'failed') {
+          //   cleanup();
+          //   reject({ status, error: 'Verification failed.' });
+          // } 
+          else if (status === 'expired') {
             cleanup();
             reject({ status, error: 'Token expired.' });
           } else if (status == "cancelled") {
