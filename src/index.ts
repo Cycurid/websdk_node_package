@@ -171,6 +171,10 @@ export function initCycurid(
         clearInterval(pollingTimer);
         const existing = document.getElementById('cycurid-iframe');
         if (existing) existing.remove();
+        const qrContainer = document.getElementById('cycurid-qr-container');
+        if (qrContainer) {
+          qrContainer.remove();
+        }
       };
 
     } catch (err: any) {
