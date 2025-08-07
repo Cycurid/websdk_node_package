@@ -1,5 +1,4 @@
 import axios from 'axios';
-import WebSocket from 'ws';
 import QRCode from 'qrcode';
 
 const API_BASE_URL = 'https://api2.cycurid.com/v2/sdk/session/'//'https://api2.cycurid.com/v2/sdk/session/' //"http://localhost:3000/v2/sdk/session/"
@@ -133,19 +132,25 @@ export function initCycurid(
       const pollServer = async () => {
         try {
           const statusResp = await axios.get(`${API_BASE_URL}verification-result/${sessionId}`, {
-            headers: { 'x-api-key': merchantKey }
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
           });
-          const { status, result, error } = statusResp.data;
+          const { status } = statusResp.data;
 
           if (status === 'success') {
             cleanup();
             resolve(status);
           } else if (status === 'failure') {
             cleanup();
-            reject({ status, error: error || 'Verification failed.' });
+            reject({ status, error: 'Verification failed.' });
+          } else if (status === 'expired') {
+            cleanup();
+            reject({ status, error: 'Token expired.' });
           } else if (status == "cancelled") {
             cleanup();
-            reject({ status, error: error || 'User Cancelled.' });
+            reject({ status, error: 'User Cancelled.' });
           }
         } catch (err: any) {
           cleanup();
