@@ -114,5 +114,3 @@ interface CycuridResult {
 ```
 
 ## License
-
-MIT 
