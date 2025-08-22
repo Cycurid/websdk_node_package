@@ -79,7 +79,8 @@ export function initCycurid(
           cursor: 'pointer',
           userSelect: 'none'
         });
-        closeButton.onclick = () => {
+        closeButton.onclick = async () => {
+          await makeExitRequest();
           qrContainer.remove();
           cleanup();
           reject({error: 'User Cancelled.'})
@@ -141,7 +142,7 @@ export function initCycurid(
             }
           });
           const { status } = statusResp.data;
-
+          // console.log("CURRENT SESSION STATUS: ", status)
           if (status === 'success') {
             setTimeout(() => {
               cleanup();
@@ -168,6 +169,32 @@ export function initCycurid(
       pollingTimer = window.setInterval(pollServer, POLL_INTERVAL);
       pollServer();
 
+      const makeExitRequest = async () => {
+        // console.log("User exiting: ", sessionId)
+        try {
+          const statusResp = await axios.get(`${API_BASE_URL}verification-result/${sessionId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          const { status } = statusResp.data;
+          if (status === 'pending' || status === 'failed') {
+            await axios.post(`${API_BASE_URL}session-close/${sessionId}`, {
+              sdk_id: sdkId,
+              token: token
+            }, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+          }
+        } catch (err) {
+          console.error('Error making exit request:', err);
+        }
+      };
+
       const cleanup = () => {
         clearInterval(pollingTimer);
         const existing = document.getElementById('cycurid-iframe');
@@ -179,7 +206,12 @@ export function initCycurid(
       };
 
     } catch (err: any) {
-      reject({ status: 'error', error: err.message });
+      if (axios.isAxiosError(err)) {
+        reject({ status: 'error', error: err.response?.data?.message || err.response?.data?.error});
+
+      } else {
+        reject({ status: 'error', error: err.message });
+      }
     }
   });
 }
