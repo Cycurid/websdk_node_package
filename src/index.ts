@@ -132,6 +132,16 @@ export function initCycurid(
 
       const POLL_INTERVAL = 2500;
       let pollingTimer: number;
+      let barcodeData: any = null;
+
+      // Listen for barcode data from iframe
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data && event.data.type === 'CYCURID_BARCODE_DATA') {
+          console.log('[Cycurid SDK] Received barcode data from iframe:', event.data.data);
+          barcodeData = event.data.data;
+        }
+      };
+      window.addEventListener('message', handleMessage);
 
       const pollServer = async () => {
         try {
@@ -146,7 +156,7 @@ export function initCycurid(
           if (status === 'success') {
             setTimeout(() => {
               cleanup();
-              resolve({status, sessionId});
+              resolve({status, sessionId, data: barcodeData});
             }, 1000);
           } 
           // else if (status === 'failed') {
@@ -197,6 +207,7 @@ export function initCycurid(
 
       const cleanup = () => {
         clearInterval(pollingTimer);
+        window.removeEventListener('message', handleMessage);
         const existing = document.getElementById('cycurid-iframe');
         if (existing) existing.remove();
         const qrContainer = document.getElementById('cycurid-qr-container');
